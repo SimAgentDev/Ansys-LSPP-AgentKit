@@ -1,6 +1,3 @@
-Alright, understood. Below is the complete English translation, kept in standard technical document style, fully retaining original markdown format, code blocks, file names and paths without extra explanation.
-
-```markdown
 # Agent2: LS-PrePost Assistant (Boundary & Material)
 
 > A graphical intelligent assistant for LS-PrePost, supporting K-file initialization, boundary condition setup, and material/section definition and assignment.
@@ -12,7 +9,6 @@ Alright, understood. Below is the complete English translation, kept in standard
 
 ## Installation
 ```bash
-git clone https://github.com/your-username/Ansys-LSPP-AgentKit.git
 cd Ansys-LSPP-AgentKit/agent2_lspp_assistant
 pip install -r requirements.txt
 ```
@@ -43,4 +39,3 @@ python main.py
 - Upon first use, select and initialize an LLM model in the interface, then load the K-file (automatic backup and node extraction will be performed).
 - Node retrieval relies on automatically generated `solid_nodes.txt` and `surface_nodes.txt`.
 - Certain operations will launch LS-PrePost and keep the window open. Please close it manually to proceed with subsequent operations.
-```

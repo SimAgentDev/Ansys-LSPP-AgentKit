@@ -17,6 +17,7 @@ LLM-powered APDL code generator & executor for ANSYS barrier modeling.
 
 ## Installation
 ```bash
+cd Ansys-LSPP-AgentKit/agent1_ansys_geometry
 pip install -r requirements.txt
 ```
 

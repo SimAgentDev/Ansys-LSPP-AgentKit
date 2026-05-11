@@ -1,4 +1,3 @@
-```markdown
 # Agent1 – ANSYS Barrier Modeling System
 
 LLM-powered APDL code generator & executor for ANSYS barrier modeling.
@@ -43,4 +42,3 @@ python main.py
 
 ## License
 For research/learning only.
-```

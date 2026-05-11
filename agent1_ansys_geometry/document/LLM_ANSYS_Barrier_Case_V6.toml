@@ -1,0 +1,709 @@
+# Optimized Complete Case Template (TOML Format): ANSYS Barrier Modeling Reference Case
+description = "Complete ANSYS APDL Barrier Modeling Case (17 Steps) – Only marks rules and variable parameters for STEP_3/4/5/11-16; other steps remain fixed"
+
+
+[STEP_0]
+name = "Initialization and Preparation"
+code = """
+FINISH$
+/CLEAR$
+/PREP7
+"""
+
+
+[STEP_1]
+name = "Define Materials"
+code = """
+MPTEMP,,,,,,,,        
+MPTEMP,1,0            
+MPDATA,EX,20,,2.00E+11     ! Elastic modulus, 200 GPa 
+MPDATA,NUXY,20,,0.3        ! Poisson's ratio
+MPDATA,DENS,20,,7830       ! Density
+MPDATA,SIGY,20,,4.14E+08   ! Yield strength 
+MPDATA,ETAN,20,,6.00E+08   ! Tangent modulus 
+MPDATA,FS,20,,0.2          ! Failure strain 
+"""
+
+
+[STEP_2]
+name = "Element Types Setup"
+code = """
+ET,1,BEAM161       ! Steel rebar (beam elements)
+ET,2,MESH200,6     ! For area meshing (pseudo-element)
+ET,3,SOLID164      ! Concrete (explicit dynamic solid)
+"""
+
+
+[STEP_3]
+name = "Barrier Cross-Section Creation"
+description = """Coordinate rule: With the origin (0,0,0) as the reference, all points are input by the user,The unit is millimeters; the number of points is a variable parameter, and the final total number of points is determined by the actual number of points provided by the user"""
+code = """
+! This step remains fixed
+*GET, KMAX, KP,, NUM, MAX  
+
+! **Core Rule 1: Both the number of points and their coordinates are dynamically determined by the user,The unit of coordinate values is millimeter**
+! The user provides n coordinate points, generating n K commands
+! Point numbering pattern: KMAX+1, KMAX+2, ..., KMAX+n
+
+! Point 1
+K, KMAX+1, 0, 0, 0                 
+
+! Point 2: Coordinates provided by user
+K, KMAX+2, 0, 813, 0        
+
+! Point 3
+K, KMAX+3, 152, 813, 0
+
+! Point 4
+K, KMAX+4, 152, 0, 0     
+
+! **Application Rule: Continue generating based on number of points provided by user**
+! If user provides 5 points: add K, KMAX+5, X5, Y5, 0 (X5, Y5 are coordinates input by the user)
+! If user provides 6 points: add K, KMAX+6, X6, Y6, 0 (X6, Y6 are coordinates input by the user)
+! ...and so on
+
+! **Core Rule 3: Connect all generated points to form area**
+! Must strictly use all user-input points: KMAX+1 to KMAX+n
+A, KMAX+1, KMAX+2, KMAX+3, KMAX+4 
+! If user provides 5 points: A, 1, KMAX+1, KMAX+2, KMAX+3, KMAX+4 
+"""
+
+
+[STEP_4]
+name = "Bridge Deck Cross-Section Creation"
+description = """Coordinate rule: Reuse the origin (0,0,0) from STEP_3 as the reference; all new points are coordinates input by the user,Unit:mm"""
+code = """
+! This step remains fixed
+*GET, KMAX, KP,, NUM, MAX  
+
+! **Core Rule 1: Both the number of points and their coordinates are dynamically determined by the user**
+! The user provides n coordinate points, generating n K commands
+! Point numbering pattern: KMAX+1, KMAX+2, ..., KMAX+n
+
+! Point 1 are the origin (0, 0, 0), which was created in Step 3 with the keypoint number 1. Subsequent points will be created starting from Point 2, and their numbering will begin from KMAX+1.
+! Point 2: Coordinates provided by user,unit is millimeter
+K, KMAX+1, 0, -203, 0         
+
+! Point 3
+K, KMAX+2, 991, -203, 0     
+
+! Point 4
+K, KMAX+3, 991, 0, 0          
+
+! **Application Rule: Continue generating based on number of points provided by user**
+! If user provides 4 points: add K, KMAX+4, X4, Y4, 0 (X4, Y4 are coordinates input by the user)
+! If user provides 5 points: add K, KMAX+5, X5, Y5, 0 (X5, Y5 are coordinates input by the user)
+! ...and so on
+
+! **Core Rule 3: Connect all points to form area (including STEP_3 starting point)**
+! Must reuse STEP_3 starting point (Point 1) + all user-input new points
+A, 1, KMAX+1, KMAX+2, KMAX+3      
+"""
+
+
+[STEP_5]
+name = "Obtain Key Dimension Information"
+description = """Two key dimensions with the unit of millimeters (mm)"""
+code = """
+! WB = Barrier base width.
+WB = 381
+! L = Total barrier length.
+L = 8230
+"""
+
+
+[STEP_6]
+name = "Working Plane & Orientation Settings"
+code = """
+WPOFFS, WB, YOFF, ZOFF
+WPROTA, THXY, THYZ, 90
+"""
+
+
+[STEP_7]
+name = "Area Cleanup (if needed)"
+code = """
+ASBW, all, SEPO, delete
+"""
+
+
+[STEP_8]
+name = "Set Mesh Size for All"
+code = """
+lsel,all
+k,111, -1000,1000,1000  ! Dummy point for lattice assignment
+lesize, all, 1.5*25.4,, ! Mesh size 1.5 inch
+"""
+
+
+[STEP_9]
+name = "Area Mesh (2D then extrusion to 3D)"
+code = """
+allsel
+mshape, 0, 2D $ mshkey, 2 $ amesh, all
+esize, , (L)/(1.5*25.4), 
+"""
+
+
+[STEP_10]
+name = "Extrude Barrier Area to Solid"
+code = """
+asel,s,area,,1
+ET, 9, solid164
+type,9
+vext, all, , , , , -L,
+
+asel,s,area,,3,4
+ET, 10, solid164
+type,10
+vext, all, , , , , -L,
+"""
+
+
+[STEP_11]
+name = "Longitudinal Reinforcement in Barrier"
+description = """The unit of numerical values is millimeters (mm); variable parameters include reinforcement point coordinates (value), element type number, number of copies, direction, and spacing"""
+code = """
+! Get current maximum keypoint number; new points start from KMAX+1
+*GET, KMAX, KP,, NUM, MAX       
+
+! **Create Original Longitudinal Reinforcement Line**
+! Point 1: Coordinates provided by user
+K, KMAX+1, 45.7, 191, 0
+! Point 2: Coordinates provided by user, Z=-L (using total length L from STEP_5)
+K, KMAX+2, 45.7, 191, -L
+! Connect two points to form original Longitudinal Reinforcement line
+L, KMAX+1, KMAX+2
+
+! **Define Reinforcement Element Type and Properties**
+*GET, LMAX, LINE,, NUM, MAX     ! Get latest line number (the initial rebar)
+LSEL,S,LINE,,LMAX
+! Element type definition: 11 is current reinforcement element type number (must be consecutively numbered)
+ET,11,BEAM161
+! Line attribute assignment: 4th parameter "11" must match element type number in ET command
+LATT, 1, 1, 11, , 111,, 1  
+
+! **Reinforcement Mesh Division**
+LESIZE, ALL, 38.1,,        ! Mesh size matches global mesh
+LMESH, ALL
+LPLOT
+
+! **Reinforcement Copying Rule: Implement multi-step copying via LGEN command**
+! **Number of copying steps is a variable parameter** (defined by user based on actual reinforcement layout requirements)
+
+! LGEN command format: LGEN,ITIME,NL1,NL2,NINC,DX,DY,DZ,KINC,NOELEM,IMOVE  
+! Variable parameters for each copying step include:
+! - ITIME: Total number of generations (including initial line + newly copied lines)
+! - DX/DY/DZ: Copy direction and spacing
+! Other parameters use default values and do not need modification
+
+! 【Copy Step Example: 3 Steps (for reference only; adjust based on user needs)】
+
+! **Target Line Selection Rule**: Target line number for each copying step = Target line number from previous step + (ITIME-1) from previous step
+! Example: Step 1 target line = LMAX + 0 = LMAX                            (the initial rebar)
+!          Step 2 target line = Step 1 target line + (4-1) = LMAX + 3      (the latest generated rebar)
+!          Step 3 target line = Step 2 target line + (2-1) = LMAX + 4      (the latest generated rebar)
+!          ....
+!          Step n target line = Step n-1 target line + (ITIME-1) from previous step
+
+! Step 1 Copy: Select the initial rebar, copy upward 3 times, spacing = 7.5 inches
+! Target line: LMAX (the initial rebar number)
+! ITIME=4 (includes 1 initial line + 3 newly copied lines)
+! Spacing: DY=191 (move upward in Y-direction)
+LSEL,S,LINE,,LMAX  
+LGEN, 4, all, NL2, NINC, , 191, , , , 
+
+! Step 2 Copy: Select the latest generated rebar from previous step, copy right 1 times
+! Target line: LMAX+3 (according to formula: LMAX + (4-1) = LMAX+3)
+! ITIME=2 (includes 1 selected line + 1 newly copied lines)
+! Spacing: DX=127 (move rightward in X-direction)
+LSEL,S,LINE,,LMAX+3  
+LGEN, 2, all, NL2, NINC, 127, , , , , 
+
+! Step 3 Copy: Select the latest generated rebar from previous step, copy right-downward 4 times
+! Target line: LMAX+4 (according to formula: LMAX+3 + (2-1) = LMAX+4)
+! ITIME=5 (includes 1 selected line + 4 newly copied lines)
+! Spacing: DX=20.3 (move rightward in X-direction), DY=-191 (move downward in Y-direction)
+LSEL,S,LINE,,LMAX+3  
+LGEN, 4, all, NL2, NINC, 20.3, -191, , , , 
+
+! Fixed step: Display all lines
+LSEL,ALL  
+LPLOT
+"""
+
+
+[STEP_12]
+name = "Multiple Stirrups in the Barrier"
+description = """Variable parameters include the number of initial stirrups, key point coordinates for each stirrup, presence of arcs, arc dimensions, element type number, number of copies along length, and direction spacing"""
+code = """
+! ==============================================
+! Core Concept: Modeling of multiple initial stirrups + overall arraying along the length of the barrier
+! ==============================================
+
+! ====== IMPORTANT: OPEN vs. CLOSED STIRRUPS ======
+! User determines whether stirrups are open or closed:
+! - OPEN STIRRUP (default): If user does NOT specify "closed", create only the line segments between consecutive points
+! - CLOSED STIRRUP: Only if user explicitly says "closed" or "connect back to start", then add L, KMAX+n, KMAX+1
+! **Important: User may specify closed status for each stirrup individually**
+! **Example**: User says "Stirrup 1 is closed" → only Stirrup 1 gets closing segment
+!              Stirrup 2, 3, etc. remain open unless explicitly specified
+! Example: User provides n=4 points → 
+!   OPEN: Create 3 segments (1-2, 2-3, 3-4)
+!   CLOSED: Create 4 segments (1-2, 2-3, 3-4, 4-1)
+
+! === Part 1: Create multiple initial stirrups ===
+! User input required: Multiple sets of stirrup contour points (each set corresponds to one initial stirrup)
+! Note: Each set of stirrups shall have different Z-coordinates (along the length direction of the barrier)
+! Example: Create 2 initial stirrups
+
+! ********** Initial Stirrup 1 **********
+! ===== Core Modeling Rules =====
+! Rule 1: Only one connection mode (straight line or arc) can be applied between adjacent point pairs
+! Rule 2: For OPEN stirrups: Total number of line segments = Number of contour points provided by user - 1
+! Rule 3: For CLOSED stirrups: Total number of line segments = Number of contour points provided by user
+! Rule 4: Arc indicator points are not counted in the number of contour points
+! **Rule 5: Closed status is determined PER STIRRUP based on user input**
+
+! Fixed steps (Prerequisites for creating coordinate points)
+*GET, KMAX, KP,, NUM, MAX ! Obtain the current maximum key point number
+! Create contour points of Stirrup 1 (n points provided by user, n=4 in the example)
+K, KMAX+1, 39, 762, 0 ! Point 1 (X, Y, Z=0)
+K, KMAX+2, 38.9, 95.5, 0 ! Point 2
+K, KMAX+3, 185.7, 95.3, 0 ! Point 3
+K, KMAX+4, 97, 762, 0 ! Point 4
+
+! ===== Connection Mode Selection (Choose one, do not use both simultaneously) =====
+! IMPORTANT: Check user input for EACH stirrup individually(default is open)
+! User input for this example: OPEN stirrup (default)
+
+! Option A: All straight-line connections (OPEN STIRRUP - default)
+! Create line segments between consecutive points (no closing segment)
+L, KMAX+1, KMAX+2 ! Point 1-Point 2 (straight line)
+L, KMAX+2, KMAX+3 ! Point 2-Point 3 (straight line)
+L, KMAX+3, KMAX+4 ! Point 3-Point 4 (straight line)
+! NO CLOSING LINE: L, KMAX+4, KMAX+1 (unless user specifies "closed")
+
+! Option B: With arcs (OPEN STIRRUP - default)
+! When the user enters: There is a downward concave arc between Point 2 and Point 3
+! Important: Replace straight line segments with arc segments, do not retain both
+! L, KMAX+1, KMAX+2 ! Point 1-Point 2 (straight line)
+! ! Replace Point 2-Point 3 with arc (delete the corresponding line command: L, KMAX+2, KMAX+3)
+! K, KMAX+5, ((38.9+185.7)/2)+(ABS(185.7-38.9))*0.1, ((95.5+95.3)/2)-(ABS(185.7-38.9))*0.4, 0
+! LARC, KMAX+2, KMAX+3, KMAX+5 ! Point 2-Point 3 (arc, replace straight line)
+! L, KMAX+3, KMAX+4 ! Point 3-Point 4 (straight line)
+! NO CLOSING LINE: L, KMAX+4, KMAX+1 (unless user specifies "closed")
+
+! Option C: CLOSED STIRRUP (only if user explicitly says "closed")
+! L, KMAX+1, KMAX+2 ! Point 1-Point 2
+! L, KMAX+2, KMAX+3 ! Point 2-Point 3
+! L, KMAX+3, KMAX+4 ! Point 3-Point 4
+! L, KMAX+4, KMAX+1 ! Point 4-Point 1 (CLOSING segment - ONLY for closed stirrups, and ONLY for Stirrup 1 if specified)
+
+! ===== Key Algorithm for Line Segment Selection =====
+*GET, LMAX1, LINE,, NUM, MAX
+! Important: n = Number of contour points provided by user (n=4 in the example)
+! For OPEN stirrups: Total number of line segments = n-1 (3 segments in the example)
+! For CLOSED stirrups: Total number of line segments = n (4 segments in the example)
+! Selection range: Count back (n-1) line segments from LMAX1 for OPEN stirrups
+! For OPEN stirrup with n=4: select last 3 segments (LMAX1-2 to LMAX1)
+! For CLOSED stirrup with n=4: select last 4 segments (LMAX1-3 to LMAX1)
+
+! Since this example uses OPEN stirrup (default):
+LSEL,S,LINE,,LMAX1-2,LMAX1 ! Select the last 3 line segments (corresponding to 4 points, OPEN stirrup)
+! Record the line number range of Stirrup 1 for subsequent overall selection
+*SET, STIRRUP1_FIRST_LINE, LMAX1-2
+*SET, STIRRUP1_LAST_LINE, LMAX1
+
+! Clear selection temporarily to prepare for creating the second stirrup
+LSEL, NONE
+
+! ********** Initial Stirrup 2 **********
+! ===== Core Modeling Rules (Applicable as well) =====
+! Fixed steps (Prerequisites for creating coordinate points)
+*GET, KMAX, KP,, NUM, MAX ! Obtain the current maximum key point number again (including points of Stirrup 1)
+! Create contour points of Stirrup 2 (example of different shape)
+K, KMAX+1, 39.1, 711.2, 50 ! Point 1 (Z=50 mm)
+K, KMAX+2, 38.9, 121, 50 ! Point 2
+K, KMAX+3, 185.7, 122, 50 ! Point 3
+K, KMAX+4, 185.7, 711.2, 50 ! Point 4
+
+! ===== Connection Mode Selection =====
+! When the user enters: There is a upward convex arc between Point 2 and Point 3
+! **Important: Check if user specified "Stirrup 2 is closed"**
+! **If not specified, Stirrup 2 is OPEN by default**
+! Example: Mixed connection (straight line + arc) - OPEN STIRRUP
+L, KMAX+1, KMAX+2 ! Point 1-Point 2 (straight line)
+! Replace Point 2-Point 3 with arc (replace straight line)
+! Arc indicator point calculation: Midpoint + offset
+! Arc calculation: Use +Horizontal Span×0.4 for upward convex arcs, and -Horizontal Span×0.4 for downward concave arcs
+! Upward convex arc: Y-coordinate + Horizontal Span × 0.4
+K, KMAX+5, ((38.9+185.7)/2)+(ABS(185.7-38.9))*0.1, ((121+122)/2)+(ABS(185.7-38.9))*0.4, 50
+LARC, KMAX+2, KMAX+3, KMAX+5 ! Point 2-Point 3 (upward convex arc)
+L, KMAX+3, KMAX+4 ! Point 3-Point 4 (straight line)
+! NO CLOSING LINE: L, KMAX+4, KMAX+1 (unless user explicitly says "Stirrup 2 is closed")
+
+! ===== Key Algorithm for Line Segment Selection =====
+*GET, LMAX2, LINE,, NUM, MAX
+! For OPEN stirrup with n=4 and mixed connection: 3 line segments (1 straight, 1 arc, 1 straight)
+LSEL,S,LINE,,LMAX2-2,LMAX2 ! Select the last 3 line segments
+! Record the line number range of Stirrup 2
+*SET, STIRRUP2_FIRST_LINE, LMAX2-2
+*SET, STIRRUP2_LAST_LINE, LMAX2
+! Clear selection temporarily
+LSEL, NONE
+
+! === Part 2: Select all initial stirrups ===
+! Select all line segments of Stirrup 1
+LSEL, S, LINE,, STIRRUP1_FIRST_LINE, STIRRUP1_LAST_LINE, 1
+! Add all line segments of Stirrup 2 to selection
+LSEL, A, LINE,, STIRRUP2_FIRST_LINE, STIRRUP2_LAST_LINE, 1
+! If there are more initial stirrups, continue adding to selection...
+! LSEL, A, LINE,, STIRRUP3_FIRST_LINE, STIRRUP3_LAST_LINE, 1
+! Display selected stirrups
+LPLOT
+
+! === Part 3: Define element attributes and mesh generation for stirrups ===
+! Define element type of stirrups
+! Note: Element types shall be numbered consecutively; Type 11 is used in Step 11, so Type 12 is used here
+ET, 12, BEAM161
+! Assign attributes to selected line segments
+! Key parameter: The 4th parameter must match the element type number in the ET command
+! LATT, MAT, SECNUM, TYPE, , REAL,,
+LATT, 1, 1, 12, , 111,, 1
+! Mesh generation
+LESIZE, ALL, 38.1,, ! Mesh size matches global mesh (converted to millimeters)
+LMESH, ALL
+
+! === Part 4: Array Stirrups Along Barrier Length ===
+! ===== Check User Input Type =====
+! Example 1: User input "Place one at intervals of 203 mm" (Unified Spacing)
+!   → UNIFIED_SPACING = 203
+! Example 2: User input "Stirrup 1 and Stirrup 2 at 150 mm, Stirrup 3 at 300 mm" (Separate Spacings)
+!   → NEED_SEPARATE_ARRAY = 1
+
+*SET, NEED_SEPARATE_ARRAY, 0    ! 0=Unified Array, 1=Separate Arrays
+*SET, UNIFIED_SPACING, 203      ! Unified Spacing Value
+
+*IF, NEED_SEPARATE_ARRAY, EQ, 0, THEN
+    ! ===== Unified Spacing Array =====
+    ! ITIME Calculation: L=8230 mm, Spacing=203 mm → 8230÷203=40.5 → ITIME=40+1=41
+    *SET, ITIME, 41  ! 8230/203=40.5 → Floor(40.5)=40 → 40+1=41
+    LGEN, ITIME, ALL, , , , , -UNIFIED_SPACING, , , 
+    
+*ELSE
+    ! ===== Separate Spacings Array =====
+    
+    ! Array Group 1 (Stirrup 1 and Stirrup 2, Spacing 150mm)
+    LSEL, S, LINE,, STIRRUP1_FIRST_LINE, STIRRUP1_LAST_LINE, 1
+    LSEL, A, LINE,, STIRRUP2_FIRST_LINE, STIRRUP2_LAST_LINE, 1
+    ! ITIME Calculation: L=8230 mm, Spacing=150 mm → 8230÷150=54.87 → ITIME=54+1=55
+    *SET, ITIME1, 55  ! 8230/150=54.87 → Floor(54.87)=54 → 54+1=55
+    LGEN, ITIME1, ALL, , , , , -150, , , 
+    
+    ! Array Group 2 (Stirrup 3, Spacing 300mm)
+    ! Note: This code block is only generated if the third stirrup is included in user input
+    ! The following code will not be generated if the user only inputs two stirrups
+    LSEL, S, LINE,, STIRRUP3_FIRST_LINE, STIRRUP3_LAST_LINE, 1
+    ! ITIME Calculation: L=8230 mm, Spacing=300 mm → 8230÷300=27.43 → ITIME=27+1=28
+    *SET, ITIME2, 28  ! 8230/300=27.43 → Floor(27.43)=27 → 27+1=28
+    LGEN, ITIME2, ALL, , , , , -300, , , 
+    
+*ENDIF
+
+! === Part 5: Cleanup and Display === 
+LPLOT
+"""
+
+
+[STEP_13]
+name = "Transverse Reinforcement in the Upper Part of the Deck"
+description = """Unit:mm, Variable parameters include reinforcement coordinates (value), element type number, number of copies, direction, and spacing"""
+code = """
+! Fixed Step
+! Get the current maximum keypoint number; new points start from KMAX+1
+*GET, KMAX, KP,, NUM, MAX               
+
+! ==============================================
+! Determine which reinforcements to create based on user input
+! ==============================================
+
+! **Important: Check if the user input contains the keyword "dense reinforcement"**
+! Execute the following two parts of code if the user input contains "dense reinforcement"
+! Execute only the first part if the user input only includes transverse reinforcement coordinates
+
+! ==============================================
+! Part 1: Create Transverse Reinforcement (Always Executed)
+! ==============================================
+
+! **Create the original transverse reinforcement line**
+! Point 1 (left end): User-provided coordinates (63.5, -157, 0)
+K, KMAX+1, 63.5, -157, 0           
+! Point 2 (right end): User-provided coordinates (4115, -157, 0)
+K, KMAX+2, 4115, -157, 0          
+! Connect two points to form the original transverse reinforcement line
+L, KMAX+1, KMAX+2
+
+! **Select the newly created transverse reinforcement line**(This is Fixed Step)
+*GET, LMAX_TRANSVERSE, LINE,, NUM, MAX             
+LSEL,S,LINE,,LMAX_TRANSVERSE
+
+! **Record the transverse reinforcement line number range**
+*SET, TRANSVERSE_LINE, LMAX_TRANSVERSE
+
+! **Define transverse reinforcement element type and attributes**
+! Element type number: 13
+ET,13,BEAM161
+! Line attribute assignment: The 4th parameter must match the element type number in the ET command
+LATT, 1, 1, 13, , 111,, 1
+
+! **Transverse reinforcement mesh generation**
+LESIZE, ALL, 38.1,,    ! Mesh size matches the global mesh
+LMESH, ALL
+
+! ==============================================
+! Part 2: Conditionally Create Dense Reinforcement (Executed Only if "Dense Reinforcement" is in User Input)
+! ==============================================
+! **Note: Generate this part of code only when the user input explicitly mentions "dense reinforcement"**
+
+! **User Input Example 1 (Including Dense Reinforcement):**
+! "Transverse reinforcement: (59, -59, 0), (4064, -59, 0), one arranged every 406mm along the length;
+!  Dense reinforcement: (59, -59, -203), (1016, -59, -203), one arranged every 406mm along the length"
+
+! **Judgment Logic: Execute the following code if the user input contains the keyword "dense reinforcement"**
+
+! --- Start Dense Reinforcement Creation (Conditional Code)---
+! Clear selection to prepare for dense reinforcement creation
+! LSEL, NONE
+!
+! !**Get the current maximum keypoint number (including transverse reinforcement points)**
+! Fixed Step
+! *GET, KMAX, KP,, NUM, MAX
+!
+! ! **Create the original dense reinforcement line**
+! Point 1 (left end): User-provided coordinates (59, -59, -203)
+! K, KMAX+1, 59, -59, -203           
+! Point 2 (right end): User-provided coordinates (1016, -59, -203)
+! K, KMAX+2, 1016, -59, -203          
+! !Connect two points to form the original dense reinforcement line
+! L, KMAX+1, KMAX+2
+!
+! ! **Select the newly created dense reinforcement line**(This is Fixed Step)
+! *GET, LMAX_DENSE, LINE,, NUM, MAX           
+! LSEL,S,LINE,,LMAX_DENSE
+!
+! ! **Record the dense reinforcement line number range**
+! *SET, DENSE_LINE, LMAX_DENSE
+!
+! ! **Define dense reinforcement element type and attributes**
+! ! Element type number: 14
+! ET,14,BEAM161
+! ! Line attribute assignment: The 4th parameter must match the element type number in the ET command
+! LATT, 1, 1, 14, , 111,, 1
+!
+! ! **Dense reinforcement mesh generation**
+! LESIZE, ALL, 38.1,,    ! Mesh size matches the global mesh
+! LMESH, ALL
+! --- End Dense Reinforcement Creation (Conditional Code)---
+
+! ==============================================
+! Part 3: Copy Reinforcements Along the Length Direction
+! ==============================================
+
+! **Calculate copy parameters**
+! - Spacing: 406 mm provided by the user
+! - ITIME calculation method:
+!   1. First calculate: L ÷ Spacing
+!   2. Then perform DOWNWARD ROUNDING (floor) of the result
+!   3. Finally add 1 to get ITIME value
+!   **Example**: L=8230mm, Spacing=406mm
+!     8230 ÷ 406 = 20.270935960591133
+!     Downward rounding (floor) → 20
+!     ITIME = 20 + 1 = 21
+!   **Important**: LLM must calculate this manually and use integer value for ITIME
+
+! **Select and copy transverse reinforcement**
+LSEL, S, LINE,, TRANSVERSE_LINE
+! Calculate ITIME for transverse reinforcement
+! LLM must calculate: ITIME = floor(L/406) + 1
+! Example: If L=8230mm, then ITIME = floor(8230/406) + 1 = 20 + 1 = 21
+*SET, ITIME_TRANSVERSE, 21  ! <-- LLM must replace 21 with calculated integer value
+! Copy direction: negative Z-axis, DZ parameter = -spacing value
+LGEN, ITIME_TRANSVERSE, ALL, , , , , -406, , , 
+
+! **Conditionally copy dense reinforcement (Executed only if dense reinforcement is created)**
+! --- Start Conditional Copying of Dense Reinforcement (Conditional Code)---
+! ! **Select and copy dense reinforcement**
+! LSEL, S, LINE,, DENSE_LINE
+! ! Calculate ITIME for dense reinforcement
+! ! **Important**: For dense reinforcement, ITIME = Floor(Total length L ÷ Spacing)
+! !   **LLM Calculation Method**:
+! !   1. Extract L from STEP_5 (example: L=8230 mm)
+! !   2. Extract spacing from user input (example: 406 mm)
+! !   3. Calculate: L ÷ Spacing (example: 8230 ÷ 406 = 20.270...)
+! !   4. Apply floor function: remove all decimal places (example: 20.270... → 20)
+! !   **Important**: No +1 required for dense reinforcement
+! ! Example: L=8230 mm, Spacing=406 mm → floor(8230÷406)=20 → ITIME=20
+! *SET, ITIME_DENSE, 20  ! <-- LLM must calculate and replace with integer value
+! ! Copy direction: negative Z-axis direction, DZ parameter = -spacing value
+! LGEN, ITIME_DENSE, ALL, , , , , -406, , , 
+! --- End Conditional Copying of Dense Reinforcement (Conditional Code)---
+"""
+
+
+[STEP_14]
+name = "Transverse Reinforcement in the Lower Part of the Deck"
+description = """Variable parameters include reinforcement coordinates (value), element type number, number of copies, and spacing"""
+code = """
+! Get current maximum keypoint number; new points start from KMAX+1
+*GET, KMAX, KP,, NUM, MAX             
+
+! **Create Original Lower Transverse Reinforcement Line**
+! Point 1 (left end): Coordinates provided by user
+K, KMAX+1, 25.4, -165.1, 0
+! Point 2 (right end): Coordinates provided by user
+K, KMAX+2, 991, -165.1, 0
+! Connect two points to form original lower Transverse Reinforcement line
+L, KMAX+1, KMAX+2
+
+! **Select Newly Created Reinforcement Line**
+*GET, LMAX, LINE,, NUM, MAX           
+LSEL,S,LINE,,LMAX
+
+! **Define Transverse Reinforcement Element Type and Properties**
+! Element type number: 15 
+ET,15,BEAM161                         
+! Line attribute assignment: 4th parameter must match element type number in ET command
+LATT, 1, 1, 15, , 111,, 1
+
+! **Reinforcement Mesh Division** 
+LESIZE, ALL, 38.1,,    ! Mesh size matches global mesh
+LMESH, ALL
+LPLOT
+
+! **Copy Transverse Reinforcement Along Length Direction**
+! **Copy Parameter Calculation Method**:
+! 1. Obtain total barrier length L from STEP_5
+! 2. Use spacing value provided by user
+! 3. Calculate: Division_Result = L ÷ Spacing
+! 4. Perform DOWNWARD ROUNDING (floor) of Division_Result
+! 5. Add 1 to get ITIME value (for transverse reinforcement)
+! **Example Calculation**: 
+!   L=8230 mm, Spacing=241.3 mm
+!   Step 1: 8230 ÷ 241.3 = 34.106... (calculate this value)
+!   Step 2: floor(34.106...) = 34 (remove all decimal places)
+!   Step 3: ITIME = 34 + 1 = 35
+! **Important**: LLM must calculate manually and use specific integer value for ITIME
+
+! **Select and copy transverse reinforcement**
+LSEL, S, LINE,, TRANSVERSE_LINE
+! Calculate ITIME for transverse reinforcement
+! LLM must calculate: ITIME = floor(L/Spacing) + 1
+! Example: If L=8230mm and Spacing=241.3mm, 
+!   then ITIME = floor(8230/241.3) + 1 = 34 + 1 = 35
+*SET, ITIME_TRANSVERSE, 35  ! <-- LLM must replace 35 with calculated integer value
+! Copy direction: Negative Z-axis direction, DZ parameter = -Spacing value
+LGEN, ITIME_TRANSVERSE, ALL, , , , , -241.3, , , 
+"""
+
+
+[STEP_15]
+name = "Longitudinal Reinforcement in the Upper Part of the Deck"
+description = """Unit: millimeters. Variable parameters include reinforcement coordinates (value), element type number, number of copies, and spacing"""
+code = """
+! Get current maximum keypoint number; new points start from KMAX+1
+*GET, KMAX, KP,, NUM, MAX             
+! **Create Original Upper Longitudinal Reinforcement Line**
+! Point 1 (front end): Coordinates provided by user
+K, KMAX+1, 25.4, -74.4, 0
+! Point 2 (back end): Coordinates provided by user
+K, KMAX+2, 25.4, -74.4, -L
+! Connect two points to form original upper Longitudinal Reinforcement line
+L, KMAX+1, KMAX+2
+
+! **Select Newly Created Reinforcement Line**
+*GET, LMAX, LINE,, NUM, MAX          
+LSEL,S,LINE,,LMAX
+
+! **Define Longitudinal Reinforcement Element Type and Properties**
+! Element type number: 16
+ET,16,BEAM161                       
+! Line attribute assignment: 4th parameter must match element type number in ET command
+LATT, 1, 1, 16, , 111,, 1
+
+! **Reinforcement Mesh Division**
+LESIZE, ALL, 38.1,,    ! Mesh size matches global mesh
+LMESH, ALL
+LPLOT
+
+! ==============================================
+! Multi-Stage Copying Strategy - Supporting Different Spacings and Times
+! ==============================================
+! --- Option 1: Single-Stage Copying (Original Simple Scenario) ---
+! Example: Copy rightward 2 times with a spacing of 381mm
+! LGEN, 3, ALL, , , 381, , , , ,
+! --- Option 2: Two-Stage Copying (New Requirement) ---
+! Stage 1: Copy rightward 5 times with a spacing of 203mm
+LGEN, 6, ALL, , , 203, , , , , ! ITIME = 1(original) + 5(copies) = 6
+! Select the newly generated line (the last line of Stage 1)
+*GET, LMAX_AFTER_STAGE1, LINE,, NUM, MAX
+LSEL,S,LINE,,LMAX_AFTER_STAGE1
+! Stage 2: Copy rightward 7 times with a spacing of 305mm
+LGEN, 8, ALL, , , 305, , , , , ! ITIME = 1(selected line) + 7(copies) = 8
+! --- Option 3: General Multi-Stage Copying Template ---
+! If more stages are required by the user, continue adding:
+! *GET, LMAX_AFTER_STAGE2, LINE,, NUM, MAX
+! LSEL,S,LINE,,LMAX_AFTER_STAGE2
+! LGEN, X, ALL, , , SPACING, , , , ,
+"""
+
+
+[STEP_16]
+name = "Longitudinal Reinforcement in the Lower Part of the Deck"
+description = """Unit: millimeters.Variable parameters include reinforcement coordinates (value), element type number, number of copies, and spacing. Correct element number conflicts to ensure consecutive numbering"""
+code = """
+! Get current maximum keypoint number; new points start from KMAX+1
+*GET, KMAX, KP,, NUM, MAX             
+
+! **Create Original Lower Longitudinal Reinforcement Line**
+! Point 1 (front end): Coordinates provided by user
+K, KMAX+1, 25.4, -195.1, 0
+! Point 2 (back end): Coordinates provided by user
+K, KMAX+2, 25.4, -195.1, -L
+! Connect two points to form original lower Longitudinal Reinforcement line
+L, KMAX+1, KMAX+2
+
+! **Select Newly Created Reinforcement Line**
+*GET, LMAX, LINE,, NUM, MAX          
+LSEL,S,LINE,,LMAX
+
+! **Define Longitudinal Reinforcement Element Type and Properties**
+! Element type number: 17
+ET,17,BEAM161                       
+! Line attribute assignment: 4th parameter must match element type number in ET command
+LATT, 1, 1, 17, , 111,, 1
+
+! **Reinforcement Mesh Division**
+LESIZE, ALL, 38.1,,    ! Mesh size matches global mesh
+LMESH, ALL
+LPLOT
+
+! **Copy Longitudinal Reinforcement Along X Direction**
+! Example: Copy reinforcement 4 times along the right direction (positive X-direction) with 8*25.4 mm spacing (same as upper reinforcement)
+! **Copy Parameter Calculation**:
+! - Spacing: Provided by user (example 203 mm)
+! - ITIME = Original 1 line + Number of copies
+! Example: Copy 4 times → ITIME=1+4=5
+! Copy direction: Positive X-axis direction, DX parameter = Spacing value
+LGEN, 5, ALL, , , 203, , , , , 
+"""
+
+
+[STEP_17]
+name = "Model Clean up"
+code = """
+asel,s,type,,2
+aclear,all
+allsel
+aplot
+"""

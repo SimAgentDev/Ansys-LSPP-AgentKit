@@ -1,0 +1,6 @@
+requests==2.32.5
+toml==0.10.2
+together==1.5.26
+pillow==11.3.0
+pywin32==311
+

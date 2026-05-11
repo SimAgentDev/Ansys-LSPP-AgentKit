@@ -1,0 +1,59 @@
+# ==================== System Path Configuration ====================
+[paths]
+# ANSYS APDL executable file path (user needs to fill in the absolute path according to the actual installation location)
+ansys_exe_path = "D:\\ANSYS18\\v180\\ANSYS\\bin\\winx64\\MAPDL.exe"
+
+# APDL working directory (for storing temporary files, etc.), using relative path (relative to the directory where main.py is located)
+apdl_working_dir = "./work_temp"
+
+# Path of case TOML file (describing modeling steps), using relative path
+case_toml_path = "agent1_ansys_geometry/document/LLM_ANSYS_Barrier_Case_V6.toml"
+
+# Default path for saving generated APDL code, using relative path
+default_save_path = "./agent1_ansys_geometry/work_path/ansys_barrier_model.txt"
+
+# Directory for saving LLM call history records, using relative path
+llm_history_dir = "./agent1_ansys_geometry/work_path/llm_history"
+
+# Directory of step schematic images (the program will read step_3.png, step_4.png, etc. from this directory), using relative path
+step_images_dir = "./step_images"
+
+# ==================== ANSYS Window Related Configuration ====================
+[ansys]
+window_title = "ANSYS LS-DYNA Utility Menu"
+dialog_titles = ["Verify", "Error", "Warning"]
+base_wait_time = 5
+dialog_interval = 2
+first_dialog_timeout = 2
+max_dialog_count = 5
+activation_retries = 1
+
+# ==================== LLM Model Configuration ====================
+# Any number of models can be added here; supported type: siliconflow, together, openai
+[[llm.models]]
+name = "DeepSeek-V3 (SiliconFlow)"
+type = "siliconflow"
+api_url = "https://api.siliconflow.cn/v1/chat/completions"
+api_token = "your_siliconflow_token_here"
+model = "Pro/deepseek-ai/DeepSeek-V3"
+
+[[llm.models]]
+name = "DeepSeek-V3.2 (SiliconFlow)"
+type = "siliconflow"
+api_url = "https://api.siliconflow.cn/v1/chat/completions"
+api_token = "your_siliconflow_token_here"
+model = "deepseek-ai/DeepSeek-V3.2"
+
+[[llm.models]]
+name = "Llama-3.1-8B (Together)"
+type = "together"
+api_url = ""
+api_token = "your_together_token_here"
+model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+
+[[llm.models]]
+name = "Llama-3.3-70B (Together)"
+type = "together"
+api_url = ""
+api_token = "your_together_token_here"
+model = "meta-llama/Llama-3.3-70B-Instruct-Turbo"

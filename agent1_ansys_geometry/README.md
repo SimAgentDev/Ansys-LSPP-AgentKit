@@ -12,7 +12,7 @@ LLM-powered APDL code generator & executor for ANSYS barrier modeling.
 
 ## Requirements
 - Windows OS
-- Mechanical APDL 18.0 (tested on v18+)
+- Mechanical APDL 18.0 (tested on v18)
 - Python 3.8+
 
 ## Installation

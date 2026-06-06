@@ -46,26 +46,6 @@ python main.py
 ```
 For detailed instructions, see [agent2_lspp_assistant/README.md](agent2_lspp_assistant/README.md)
 
-## Project Structure
-```
-Ansys-LSPP-AgentKit/
-├── agent1_ansys_geometry/     # ANSYS geometric modeling agent
-│   ├── main.py
-│   ├── config.toml.example
-│   ├── requirements.txt
-│   └── README.md
-├── agent2_lspp_assistant/     # LS-PrePost assistant agent
-│   ├── main.py
-│   ├── GUI.py
-│   ├── utils.py
-│   ├── requirements.txt
-│   ├── *.cfile (template files)
-│   └── README.md
-├── .gitignore
-├── LICENSE
-└── README.md                  # This file
-```
-
 ## Notes
 - The two agents are **completely independent**, and you do not need to install dependencies for both at the same time.
 - Agent1 relies on Tkinter (built-in with Python), while Agent2 requires additional image processing libraries (included in requirements.txt).

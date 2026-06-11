@@ -2,6 +2,11 @@
 
 > A multi-agent toolkit for FEM simulation, enabling automatic ANSYS geometric modeling and LS-PrePost pre/post processing.
 
+## Paper Information
+> **Paper**: [Your Full Paper Title](https://arxiv.org/abs/XXXX.XXXXX)  
+> **Authors**: Author 1, Author 2, Author 3, ...  
+> **arXiv ID**: [XXXX.XXXXX](https://arxiv.org/abs/XXXX.XXXXX)
+
 ## Project Introduction
 This project consists of two independent agents responsible for different stages of FEM simulation:
 

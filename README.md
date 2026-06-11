@@ -67,7 +67,6 @@ Ansys-LSPP-AgentKit/
 │   ├── requirements.txt
 │   ├── *.cfile (template files)
 │   └── README.md
-├── .gitignore
 ├── LICENSE
 └── README.md                  # This file
 ```

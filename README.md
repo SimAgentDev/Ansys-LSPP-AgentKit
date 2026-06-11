@@ -50,10 +50,16 @@ For detailed instructions, see [agent2_lspp_assistant/README.md](agent2_lspp_ass
 ```
 Ansys-LSPP-AgentKit/
 ├── agent1_ansys_geometry/     # ANSYS geometric modeling agent
-│   ├── main.py
-│   ├── config.toml.example
-│   ├── requirements.txt
-│   └── README.md
+│   ├── APDL_Copilot/
+│   │   ├── step_images/
+│   │   ├── config.toml
+│   │   └── main.py
+│   ├── document/
+│   │   └── LLM_ANSYS_Barrier_Case_V6.toml
+│   ├── work_path/
+│   │   └── ansys_barrier_model.txt
+│   ├── README.md
+│   └── requirements.txt
 ├── agent2_lspp_assistant/     # LS-PrePost assistant agent
 │   ├── main.py
 │   ├── GUI.py

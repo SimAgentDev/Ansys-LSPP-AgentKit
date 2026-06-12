@@ -4,7 +4,7 @@
 
 ## Paper Information
 > **Paper**: [Human-Enhanced Loop Modeling (HELM): Agent-Based Finite Element Modeling of Concrete Bridge Barriers](https://arxiv.org/abs/2606.12025)  
-> **Authors**: Author 1, Author 2, Author 3, ...  
+> **Authors**: Quankai Wang, Yulin Xie, Tongfei Yang, Minghui Cheng, Ran Cao 
 > **arXiv ID**: [2606.12025](https://arxiv.org/abs/2606.12025)
 
 ## Project Introduction

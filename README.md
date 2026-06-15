@@ -19,7 +19,7 @@ This project consists of two independent agents responsible for different stages
 Each agent has its own directory, dependencies and execution procedure, and can be used independently on demand.
 
 
-### Table A1. Checkpoint Specifications for Parapet Modeling
+### Table 1. Checkpoint Specifications for Parapet Modeling
 This table details all functional checkpoints of the multi-agent system, corresponding to the workflow in the reference paper.
 
 <table>

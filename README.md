@@ -11,10 +11,10 @@
 This project consists of two independent agents responsible for different stages of FEM simulation:
 
 - **Agent1 – ANSYS Barrier Modeling System**
-  It generates APDL code via natural language interaction and executes the code automatically in ANSYS. This agent completes geometric modeling for the concrete part of barrier structures (Checkpoints 1–3, in accordance with Table A1 in the paper) and reinforcement layout (Checkpoints 4–9).
+  It generates APDL code via natural language interaction and executes the code automatically in ANSYS. This agent completes geometric modeling for the concrete part of barrier structures (Checkpoints 1–3, in accordance with Table 1 in the paper) and reinforcement layout (Checkpoints 4–9).
 
 - **Agent2 – LS-PrePost Assistant**
-  This graphical LS-PrePost tool supports K-file configuration for boundary conditions (Checkpoints 10–15, in accordance with Table A1 in the paper), load application (Checkpoints 16–18), as well as definition and assignment of material and section properties (Checkpoints 19–22).
+  This graphical LS-PrePost tool supports K-file configuration for boundary conditions (Checkpoints 10–15, in accordance with Table 1 in the paper), load application (Checkpoints 16–18), as well as definition and assignment of material and section properties (Checkpoints 19–22).
 
 Each agent has its own directory, dependencies and execution procedure, and can be used independently on demand.
 

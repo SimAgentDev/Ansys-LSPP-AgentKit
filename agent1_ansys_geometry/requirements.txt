@@ -1,4 +1,4 @@
-requests==2.32.5
+requests==2.32.4
 toml==0.10.2
 together==1.5.26
 pillow==11.3.0

@@ -1,0 +1,6 @@
+*lsprepost macro command file
+*macro begin select part
+open keyword "C:\Users\WQK\Desktop\test\barrier_model_v3.k"
+assembly off fem 1
++M 5
+*macro end

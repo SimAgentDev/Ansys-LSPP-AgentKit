@@ -1,0 +1,13 @@
+*lsprepost macro command file
+*macro begin assignment
+open keyword KEYWORD_FILE_PATH_PLACEHOLDER
+assembly off fem 1
++M 1
+genselect target part
+partdata select 10
+partdata readlist 1
+clearid part
+partdata assignapply 0 1 10 0 0 -1 -1 0 1
+clearid part
+partdata select 0
+*macro end

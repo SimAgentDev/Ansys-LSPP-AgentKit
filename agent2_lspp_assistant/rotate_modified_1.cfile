@@ -1,0 +1,24 @@
+$# LS-PrePost command file created by LS-PrePost(R) V4.10.8-06Nov2023 -64bit-Window
+$# Created on Aug-28-2025 (18:41:37)
+open keyword "KEYWORD_FILE_PATH_PLACEHOLDER"
+Message 1
+Message 0
+top
+ac
+genselect target node
+genselect transfer 0
+genselect target node
+genselect transfer 0
+loadstate 1;
+loadgrot 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 ;
+loadeyepos 0.000000 0.000000 0.000000;
+loadupvect 0.000000 1.000000 0.000000;
+genselect node add region in 0.000000 1.000000 1.000000 0.000000
+rotate_model 0 0 0 x 90
+rotate_model 0 0 0 z -90
+rotate_model accept 0 1354341 1797925
+transform_model done
+save keywordabsolute 0
+save keywordbylongfmt 0
+save keywordbyi10fmt 0
+save outversion 10
